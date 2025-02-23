@@ -48,9 +48,9 @@
       speed: 7
     };
 
-    // Load frog image (ensure "frog.png" is in the same folder or update the URL)
+    // Load frog image - update the source to your file name
     const frogImage = new Image();
-    frogImage.src = "frog.png";
+    frogImage.src = "frog.jpg"; // Ensure your file is named "frog.jpg" and is in the same folder
 
     // Array to hold falling stars
     const stars = [];
@@ -152,8 +152,13 @@
       requestAnimationFrame(gameLoop);
     }
 
-    // Start the game loop once the frog image has loaded
+    // Start the game loop once the frog image has loaded, or start even if there's an error
     frogImage.onload = () => {
+      gameLoop();
+    };
+    frogImage.onerror = () => {
+      console.error("Frog image failed to load. Please check the file name and path.");
+      // Optionally, start game loop without the image
       gameLoop();
     };
   </script>
