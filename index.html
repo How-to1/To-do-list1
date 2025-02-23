@@ -10,9 +10,10 @@
       width: 400px;
       height: 600px;
       border: 2px solid #000;
-      background: #e0f7fa;
+      background: linear-gradient(to bottom, #a3d9a5, #e0f7fa);
       overflow: hidden;
       margin: 20px auto;
+      border-radius: 10px;
     }
     
     /* Score Display */
@@ -37,6 +38,45 @@
       border-radius: 50% 50% 40% 40%;
       z-index: 1;
       transition: left 0.1s;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    
+    /* Frog Eyes */
+    #frog .eye {
+      position: absolute;
+      top: 8px;
+      width: 10px;
+      height: 10px;
+      background: white;
+      border-radius: 50%;
+    }
+    #frog .eye::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 4px;
+      height: 4px;
+      background: black;
+      border-radius: 50%;
+    }
+    #frog .eye.left {
+      left: 10px;
+    }
+    #frog .eye.right {
+      right: 10px;
+    }
+    
+    /* Frog Mouth */
+    #frog .mouth {
+      position: absolute;
+      bottom: 5px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 10px;
+      background: #2e7d32;
+      border-radius: 50% / 100%;
     }
     
     /* Frog Jump Animation */
@@ -45,7 +85,6 @@
       50%  { transform: translateY(-70px); }
       100% { transform: translateY(0); }
     }
-    
     .jump {
       animation: jumpAnimation 0.5s ease;
     }
@@ -67,7 +106,11 @@
 <body>
   <div id="gameArea">
     <div id="score">Score: 0</div>
-    <div id="frog"></div>
+    <div id="frog">
+      <div class="eye left"></div>
+      <div class="eye right"></div>
+      <div class="mouth"></div>
+    </div>
     <div id="star">⭐</div>
   </div>
   
@@ -79,19 +122,22 @@
     const scoreDisplay = document.getElementById('score');
     
     let score = 0;
-    let starSpeed = 3; // Speed in pixels per frame
+    let starSpeed = 3; // Falling speed in pixels per frame
     let starCaught = false;
+    let isAnimatingStar = false;
     
-    // Reset star to a new random position at the top
+    // Reset the star to a new random position at the top
     function resetStar() {
+      star.style.transition = ""; // remove any transition styling
       star.style.top = '-30px';
       const maxX = gameArea.clientWidth - star.clientWidth;
       const randomX = Math.floor(Math.random() * maxX);
       star.style.left = randomX + 'px';
       starCaught = false;
+      isAnimatingStar = false;
     }
     
-    // Check if two rectangles overlap (basic collision detection)
+    // Basic collision detection (rectangle overlap)
     function isColliding(rect1, rect2) {
       return !(rect1.right < rect2.left || 
                rect1.left > rect2.right || 
@@ -99,36 +145,54 @@
                rect1.top > rect2.bottom);
     }
     
-    // Main game loop: update star position and check for collision
+    // Main game loop: update star position and check for collisions
     function update() {
-      // Move star downward
-      let starTop = parseInt(star.style.top);
-      starTop += starSpeed;
-      star.style.top = starTop + 'px';
-      
-      // If the star goes off screen, reset it
-      if (starTop > gameArea.clientHeight) {
-        resetStar();
+      if (!isAnimatingStar) {
+        // Move star downward
+        let starTop = parseInt(star.style.top);
+        starTop += starSpeed;
+        star.style.top = starTop + 'px';
+        
+        // Reset star if it goes off screen
+        if (starTop > gameArea.clientHeight) {
+          resetStar();
+        }
       }
       
-      // Check collision between frog and star
+      // Check for collision between the frog and the star
       const frogRect = frog.getBoundingClientRect();
       const starRect = star.getBoundingClientRect();
       
       if (!starCaught && isColliding(frogRect, starRect)) {
-        starCaught = true;  // Prevent multiple collisions per star drop
+        starCaught = true;
         score++;
         scoreDisplay.textContent = 'Score: ' + score;
         
-        // Trigger frog jump
+        // Trigger frog jump animation
         frog.classList.add('jump');
-        // Remove the jump class after the animation finishes
         setTimeout(() => {
           frog.classList.remove('jump');
         }, 500);
         
-        // Reset star after a short delay to allow the jump to be visible
-        setTimeout(resetStar, 200);
+        // Animate the star moving into the frog's mouth
+        isAnimatingStar = true;
+        const gameRect = gameArea.getBoundingClientRect();
+        const mouth = frog.querySelector('.mouth');
+        const mouthRect = mouth.getBoundingClientRect();
+        
+        // Calculate target position for the star (centered in the frog's mouth)
+        const targetLeft = mouthRect.left - gameRect.left + (mouthRect.width - star.clientWidth) / 2;
+        const targetTop = mouthRect.top - gameRect.top + (mouthRect.height - star.clientHeight) / 2;
+        
+        // Animate the star into the mouth over 0.3s
+        star.style.transition = "all 0.3s ease";
+        star.style.left = targetLeft + "px";
+        star.style.top = targetTop + "px";
+        
+        // After the animation, reset the star for the next round
+        setTimeout(() => {
+          resetStar();
+        }, 400);
       }
       
       requestAnimationFrame(update);
@@ -136,8 +200,7 @@
     
     // Allow player to move the frog horizontally using arrow keys
     document.addEventListener('keydown', function(event) {
-      const step = 20; // pixels per key press
-      // Use getComputedStyle to read the current 'left' value
+      const step = 20; // Pixels to move per key press
       let frogLeft = parseInt(window.getComputedStyle(frog).left, 10);
       
       if (event.key === 'ArrowLeft') {
