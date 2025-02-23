@@ -1,166 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Catch the Falling Stars with a Frog</title>
+  <meta charset="UTF-8" />
+  <title>Frog Animation</title>
   <style>
+    /* Basic page styling */
     body {
-      margin: 0;
-      background-color: #222;
-      color: #fff;
-      font-family: Arial, sans-serif;
+      background-color: #e0f7fa;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      margin: 0;
+    }
+
+    /* Frog container */
+    .frog {
       position: relative;
+      width: 100px;
+      height: 100px;
+      background: #4CAF50;
+      border-radius: 50% 50% 40% 40%;
+      animation: jump 2s infinite ease-in-out;
     }
-    canvas {
-      background-color: #333;
-      border: 2px solid #fff;
-      display: block;
-    }
-    #scoreBoard {
+
+    /* Frog eyes */
+    .frog .eye {
       position: absolute;
+      width: 15px;
+      height: 15px;
+      background: white;
+      border-radius: 50%;
       top: 20px;
+    }
+    .frog .eye::after {
+      content: '';
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      background: black;
+      border-radius: 50%;
+      top: 3px;
+      left: 3px;
+    }
+    .frog .eye.left {
       left: 20px;
-      font-size: 24px;
-      z-index: 1;
+    }
+    .frog .eye.right {
+      right: 20px;
+    }
+
+    /* Additional features: little nostrils (optional) */
+    .frog::before,
+    .frog::after {
+      content: '';
+      position: absolute;
+      background: #4CAF50;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      top: 10px;
+    }
+    .frog::before {
+      left: 10px;
+    }
+    .frog::after {
+      right: 10px;
+    }
+
+    /* Keyframes for the jumping animation */
+    @keyframes jump {
+      0%   { transform: translateY(0); }
+      30%  { transform: translateY(-80px); }
+      50%  { transform: translateY(0); }
+      70%  { transform: translateY(-40px); }
+      100% { transform: translateY(0); }
     }
   </style>
 </head>
 <body>
-  <div id="scoreBoard">Score: 0</div>
-  <canvas id="gameCanvas" width="600" height="400"></canvas>
-  <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    const scoreBoard = document.getElementById('scoreBoard');
-
-    let score = 0;
-
-    // Frog (basket) properties
-    const basket = {
-      width: 80,
-      height: 80, // Adjusted height for the frog image
-      x: canvas.width / 2 - 40,
-      y: canvas.height - 90,
-      speed: 7
-    };
-
-    // Load frog image - update the source to your file name
-    const frogImage = new Image();
-    frogImage.src = "frog.jpg"; // Ensure your file is named "frog.jpg" and is in the same folder
-
-    // Array to hold falling stars
-    const stars = [];
-    let starInterval = 1500; // New star every 1.5 seconds
-    let lastStarTime = Date.now();
-
-    // Keyboard controls
-    let rightPressed = false;
-    let leftPressed = false;
-
-    document.addEventListener('keydown', keyDownHandler, false);
-    document.addEventListener('keyup', keyUpHandler, false);
-
-    function keyDownHandler(e) {
-      if (e.key === "Right" || e.key === "ArrowRight") {
-        rightPressed = true;
-      } else if (e.key === "Left" || e.key === "ArrowLeft") {
-        leftPressed = true;
-      }
-    }
-
-    function keyUpHandler(e) {
-      if (e.key === "Right" || e.key === "ArrowRight") {
-        rightPressed = false;
-      } else if (e.key === "Left" || e.key === "ArrowLeft") {
-        leftPressed = false;
-      }
-    }
-
-    // Draw the frog using the image
-    function drawFrog() {
-      ctx.drawImage(frogImage, basket.x, basket.y, basket.width, basket.height);
-    }
-
-    // Draw a star
-    function drawStar(star) {
-      ctx.beginPath();
-      ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffeb3b";
-      ctx.fill();
-      ctx.closePath();
-    }
-
-    // Check for collision between a star and the frog (basket)
-    function isColliding(star, basket) {
-      return star.x > basket.x && star.x < basket.x + basket.width &&
-             star.y + star.radius > basket.y && star.y - star.radius < basket.y + basket.height;
-    }
-
-    // Main game loop
-    function gameLoop() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      // Move frog based on keyboard input
-      if (rightPressed && basket.x < canvas.width - basket.width) {
-        basket.x += basket.speed;
-      } else if (leftPressed && basket.x > 0) {
-        basket.x -= basket.speed;
-      }
-
-      drawFrog();
-
-      // Spawn new stars at intervals
-      if (Date.now() - lastStarTime > starInterval) {
-        const newStar = {
-          x: Math.random() * (canvas.width - 20) + 10,
-          y: -10,
-          radius: 8,
-          speed: 3 + Math.random() * 2
-        };
-        stars.push(newStar);
-        lastStarTime = Date.now();
-      }
-
-      // Update and draw stars
-      for (let i = 0; i < stars.length; i++) {
-        const star = stars[i];
-        star.y += star.speed;
-
-        // Check collision with frog
-        if (isColliding(star, basket)) {
-          score += 10;
-          stars.splice(i, 1);
-          i--;
-          continue;
-        }
-        // Remove star if it goes off-screen
-        if (star.y - star.radius > canvas.height) {
-          stars.splice(i, 1);
-          i--;
-          continue;
-        }
-        drawStar(star);
-      }
-
-      // Update score display
-      scoreBoard.textContent = "Score: " + score;
-
-      requestAnimationFrame(gameLoop);
-    }
-
-    // Start the game loop once the frog image has loaded, or start even if there's an error
-    frogImage.onload = () => {
-      gameLoop();
-    };
-    frogImage.onerror = () => {
-      console.error("Frog image failed to load. Please check the file name and path.");
-      // Optionally, start game loop without the image
-      gameLoop();
-    };
-  </script>
+  <div class="frog">
+    <div class="eye left"></div>
+    <div class="eye right"></div>
+  </div>
 </body>
 </html>
