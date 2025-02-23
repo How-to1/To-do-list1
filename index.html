@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Enhanced To-Do List with Deadline</title>
+  <title>Enhanced To-Do List with Edit & File Upload</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -23,7 +23,8 @@
       margin-bottom: 20px;
     }
     .input-group input[type="text"],
-    .input-group input[type="datetime-local"] {
+    .input-group input[type="datetime-local"],
+    .input-group input[type="file"] {
       padding: 10px;
       font-size: 16px;
       flex: 1;
@@ -45,22 +46,28 @@
       padding: 10px;
       border: 1px solid #ddd;
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: column;
+    }
+    .task-container {
+      display: flex;
       justify-content: space-between;
       align-items: center;
     }
-    li.completed span {
-      text-decoration: line-through;
-      color: gray;
-    }
-    li span {
+    .task-content {
       display: flex;
       flex-direction: column;
     }
-    li small {
-      color: #555;
+    .task-content .deadline {
       font-size: 12px;
+      color: #555;
       margin-top: 3px;
+    }
+    .attachment {
+      margin-top: 5px;
+    }
+    .attachment img {
+      max-width: 100px;
+      display: block;
     }
     button {
       border: none;
@@ -73,6 +80,10 @@
       background: #2ecc71;
       color: #fff;
     }
+    .edit-btn {
+      background: #3498db;
+      color: #fff;
+    }
     .delete-btn {
       background: #e74c3c;
       color: #fff;
@@ -82,6 +93,17 @@
       color: #fff;
       margin-top: 10px;
     }
+    .completed .task-content {
+      text-decoration: line-through;
+      color: gray;
+    }
+    .edit-div {
+      margin-top: 10px;
+    }
+    .edit-div input,
+    .edit-div button {
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
@@ -89,6 +111,7 @@
   <div class="input-group">
     <input type="text" id="todo-input" placeholder="Enter a new to-do">
     <input type="datetime-local" id="deadline-input" title="Set deadline (optional)">
+    <input type="file" id="file-input" title="Upload an image or file (optional)">
     <button id="add-btn">Add</button>
     <button id="delete-all-btn">Delete All</button>
   </div>
@@ -97,42 +120,62 @@
   <script>
     const input = document.getElementById('todo-input');
     const deadlineInput = document.getElementById('deadline-input');
+    const fileInput = document.getElementById('file-input');
     const addButton = document.getElementById('add-btn');
     const deleteAllButton = document.getElementById('delete-all-btn');
     const todoList = document.getElementById('todo-list');
 
-    // Function to add a new todo item
+    // Add a new todo item
     function addTodo() {
       const todoText = input.value.trim();
       if (todoText === '') return;
       
       const li = document.createElement('li');
 
-      // Create span for task content
-      const contentSpan = document.createElement('span');
-      contentSpan.textContent = todoText;
-      
-      // If a deadline is provided, display it below the task
+      // Create container for task content and actions
+      const taskContainer = document.createElement('div');
+      taskContainer.className = 'task-container';
+
+      // Create element for task text and deadline
+      const contentSpan = document.createElement('div');
+      contentSpan.className = 'task-content';
+      const textNode = document.createElement('span');
+      textNode.textContent = todoText;
+      contentSpan.appendChild(textNode);
+
+      // If a deadline is provided, display it
       const deadlineValue = deadlineInput.value;
       if (deadlineValue) {
-        const deadlineInfo = document.createElement('small');
-        // Replace the "T" between date and time for better readability
+        const deadlineInfo = document.createElement('div');
+        deadlineInfo.className = 'deadline';
         deadlineInfo.textContent = "Deadline: " + deadlineValue.replace('T', ' ');
         contentSpan.appendChild(deadlineInfo);
       }
       
-      li.appendChild(contentSpan);
+      taskContainer.appendChild(contentSpan);
 
-      // Create complete button to toggle completed state
+      // Create container for action buttons
+      const actionContainer = document.createElement('div');
+
+      // Complete button to toggle completed state
       const completeBtn = document.createElement('button');
       completeBtn.textContent = 'Complete';
       completeBtn.className = 'complete-btn';
       completeBtn.addEventListener('click', () => {
         li.classList.toggle('completed');
       });
-      li.appendChild(completeBtn);
+      actionContainer.appendChild(completeBtn);
 
-      // Create delete button with confirmation
+      // Edit button to enable editing of the task
+      const editBtn = document.createElement('button');
+      editBtn.textContent = 'Edit';
+      editBtn.className = 'edit-btn';
+      editBtn.addEventListener('click', () => {
+        editTodo(li);
+      });
+      actionContainer.appendChild(editBtn);
+
+      // Delete button with confirmation
       const deleteBtn = document.createElement('button');
       deleteBtn.textContent = 'Delete';
       deleteBtn.className = 'delete-btn';
@@ -141,16 +184,35 @@
           li.remove();
         }
       });
-      li.appendChild(deleteBtn);
+      actionContainer.appendChild(deleteBtn);
 
+      taskContainer.appendChild(actionContainer);
+      li.appendChild(taskContainer);
+
+      // Handle file attachment if provided
+      if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        let attachmentElement;
+        if (file.type.startsWith("image/")) {
+          attachmentElement = document.createElement('img');
+          attachmentElement.src = URL.createObjectURL(file);
+        } else {
+          attachmentElement = document.createElement('div');
+          attachmentElement.textContent = "Attached File: " + file.name;
+        }
+        attachmentElement.className = 'attachment';
+        li.appendChild(attachmentElement);
+      }
+      
       todoList.appendChild(li);
 
       // Clear input fields after adding
       input.value = '';
       deadlineInput.value = '';
+      fileInput.value = '';
     }
 
-    // Function to delete all todo items with double confirmation
+    // Delete all todo items with double confirmation
     function deleteAllTodos() {
       if (confirm('Are you sure you want to delete all items?')) {
         if (confirm('This action cannot be undone. Are you really sure?')) {
@@ -161,10 +223,92 @@
       }
     }
 
-    // Event listeners for button clicks and keypress (Enter)
+    // Enable editing of a todo item
+    function editTodo(li) {
+      const contentSpan = li.querySelector('.task-content');
+      const currentText = contentSpan.querySelector('span').textContent;
+      const deadlineDiv = contentSpan.querySelector('.deadline');
+      let currentDeadline = deadlineDiv ? deadlineDiv.textContent.replace('Deadline: ', '').trim().replace(' ', 'T') : '';
+
+      // Hide original content while editing
+      contentSpan.style.display = 'none';
+
+      // Create edit container
+      const editDiv = document.createElement('div');
+      editDiv.className = 'edit-div';
+
+      // Text input for editing task text
+      const editTextInput = document.createElement('input');
+      editTextInput.type = 'text';
+      editTextInput.value = currentText;
+      editDiv.appendChild(editTextInput);
+
+      // Datetime-local input for editing deadline
+      const editDeadlineInput = document.createElement('input');
+      editDeadlineInput.type = 'datetime-local';
+      editDeadlineInput.value = currentDeadline;
+      editDiv.appendChild(editDeadlineInput);
+
+      // File input for updating file attachment
+      const editFileInput = document.createElement('input');
+      editFileInput.type = 'file';
+      editDiv.appendChild(editFileInput);
+
+      // Save button to update the task
+      const saveBtn = document.createElement('button');
+      saveBtn.textContent = 'Save';
+      saveBtn.addEventListener('click', () => {
+        const newText = editTextInput.value.trim();
+        if (newText === '') return; // Do not allow empty task text
+
+        // Update task text
+        contentSpan.querySelector('span').textContent = newText;
+
+        // Update deadline
+        if (editDeadlineInput.value) {
+          const newDeadline = "Deadline: " + editDeadlineInput.value.replace('T', ' ');
+          if (deadlineDiv) {
+            deadlineDiv.textContent = newDeadline;
+          } else {
+            const newDeadlineDiv = document.createElement('div');
+            newDeadlineDiv.className = 'deadline';
+            newDeadlineDiv.textContent = newDeadline;
+            contentSpan.appendChild(newDeadlineDiv);
+          }
+        } else if (deadlineDiv) {
+          deadlineDiv.remove();
+        }
+
+        // Update file attachment if a new file is provided
+        if (editFileInput.files && editFileInput.files[0]) {
+          const file = editFileInput.files[0];
+          let newAttachment;
+          if (file.type.startsWith("image/")) {
+            newAttachment = document.createElement('img');
+            newAttachment.src = URL.createObjectURL(file);
+          } else {
+            newAttachment = document.createElement('div');
+            newAttachment.textContent = "Attached File: " + file.name;
+          }
+          newAttachment.className = 'attachment';
+          const oldAttachment = li.querySelector('.attachment');
+          if (oldAttachment) {
+            oldAttachment.remove();
+          }
+          li.appendChild(newAttachment);
+        }
+
+        // Remove edit container and show original content
+        editDiv.remove();
+        contentSpan.style.display = 'flex';
+      });
+      editDiv.appendChild(saveBtn);
+
+      li.appendChild(editDiv);
+    }
+
     addButton.addEventListener('click', addTodo);
     deleteAllButton.addEventListener('click', deleteAllTodos);
-
     input.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         addTodo();
