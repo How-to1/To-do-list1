@@ -1,87 +1,157 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Frog Animation</title>
+  <meta charset="UTF-8">
+  <title>Catch the Falling Stars - Frog Game</title>
   <style>
-    /* Basic page styling */
-    body {
-      background-color: #e0f7fa;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-
-    /* Frog container */
-    .frog {
+    /* Game Area */
+    #gameArea {
       position: relative;
-      width: 100px;
-      height: 100px;
+      width: 400px;
+      height: 600px;
+      border: 2px solid #000;
+      background: #e0f7fa;
+      overflow: hidden;
+      margin: 20px auto;
+    }
+    
+    /* Score Display */
+    #score {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 20px;
+      font-family: sans-serif;
+      color: #333;
+      z-index: 2;
+    }
+    
+    /* Frog Styling */
+    #frog {
+      position: absolute;
+      bottom: 0;
+      left: 175px; /* Centered horizontally */
+      width: 50px;
+      height: 50px;
       background: #4CAF50;
       border-radius: 50% 50% 40% 40%;
-      animation: jump 2s infinite ease-in-out;
+      z-index: 1;
+      transition: left 0.1s;
     }
-
-    /* Frog eyes */
-    .frog .eye {
-      position: absolute;
-      width: 15px;
-      height: 15px;
-      background: white;
-      border-radius: 50%;
-      top: 20px;
-    }
-    .frog .eye::after {
-      content: '';
-      position: absolute;
-      width: 7px;
-      height: 7px;
-      background: black;
-      border-radius: 50%;
-      top: 3px;
-      left: 3px;
-    }
-    .frog .eye.left {
-      left: 20px;
-    }
-    .frog .eye.right {
-      right: 20px;
-    }
-
-    /* Additional features: little nostrils (optional) */
-    .frog::before,
-    .frog::after {
-      content: '';
-      position: absolute;
-      background: #4CAF50;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      top: 10px;
-    }
-    .frog::before {
-      left: 10px;
-    }
-    .frog::after {
-      right: 10px;
-    }
-
-    /* Keyframes for the jumping animation */
-    @keyframes jump {
+    
+    /* Frog Jump Animation */
+    @keyframes jumpAnimation {
       0%   { transform: translateY(0); }
-      30%  { transform: translateY(-80px); }
-      50%  { transform: translateY(0); }
-      70%  { transform: translateY(-40px); }
+      50%  { transform: translateY(-70px); }
       100% { transform: translateY(0); }
+    }
+    
+    .jump {
+      animation: jumpAnimation 0.5s ease;
+    }
+    
+    /* Star Styling */
+    #star {
+      position: absolute;
+      top: -30px;
+      width: 30px;
+      height: 30px;
+      font-size: 24px;
+      text-align: center;
+      line-height: 30px;
+      color: gold;
+      z-index: 1;
     }
   </style>
 </head>
 <body>
-  <div class="frog">
-    <div class="eye left"></div>
-    <div class="eye right"></div>
+  <div id="gameArea">
+    <div id="score">Score: 0</div>
+    <div id="frog"></div>
+    <div id="star">⭐</div>
   </div>
+  
+  <script>
+    // Get game elements
+    const gameArea = document.getElementById('gameArea');
+    const frog = document.getElementById('frog');
+    const star = document.getElementById('star');
+    const scoreDisplay = document.getElementById('score');
+    
+    let score = 0;
+    let starSpeed = 3; // Speed in pixels per frame
+    let starCaught = false;
+    
+    // Reset star to a new random position at the top
+    function resetStar() {
+      star.style.top = '-30px';
+      const maxX = gameArea.clientWidth - star.clientWidth;
+      const randomX = Math.floor(Math.random() * maxX);
+      star.style.left = randomX + 'px';
+      starCaught = false;
+    }
+    
+    // Check if two rectangles overlap (basic collision detection)
+    function isColliding(rect1, rect2) {
+      return !(rect1.right < rect2.left || 
+               rect1.left > rect2.right || 
+               rect1.bottom < rect2.top || 
+               rect1.top > rect2.bottom);
+    }
+    
+    // Main game loop: update star position and check for collision
+    function update() {
+      // Move star downward
+      let starTop = parseInt(star.style.top);
+      starTop += starSpeed;
+      star.style.top = starTop + 'px';
+      
+      // If the star goes off screen, reset it
+      if (starTop > gameArea.clientHeight) {
+        resetStar();
+      }
+      
+      // Check collision between frog and star
+      const frogRect = frog.getBoundingClientRect();
+      const starRect = star.getBoundingClientRect();
+      
+      if (!starCaught && isColliding(frogRect, starRect)) {
+        starCaught = true;  // Prevent multiple collisions per star drop
+        score++;
+        scoreDisplay.textContent = 'Score: ' + score;
+        
+        // Trigger frog jump
+        frog.classList.add('jump');
+        // Remove the jump class after the animation finishes
+        setTimeout(() => {
+          frog.classList.remove('jump');
+        }, 500);
+        
+        // Reset star after a short delay to allow the jump to be visible
+        setTimeout(resetStar, 200);
+      }
+      
+      requestAnimationFrame(update);
+    }
+    
+    // Allow player to move the frog horizontally using arrow keys
+    document.addEventListener('keydown', function(event) {
+      const step = 20; // pixels per key press
+      let frogLeft = parseInt(frog.style.left);
+      
+      if (event.key === 'ArrowLeft') {
+        frogLeft = Math.max(0, frogLeft - step);
+        frog.style.left = frogLeft + 'px';
+      } else if (event.key === 'ArrowRight') {
+        const maxLeft = gameArea.clientWidth - frog.clientWidth;
+        frogLeft = Math.min(maxLeft, frogLeft + step);
+        frog.style.left = frogLeft + 'px';
+      }
+    });
+    
+    // Start the game
+    resetStar();
+    requestAnimationFrame(update);
+  </script>
 </body>
 </html>
