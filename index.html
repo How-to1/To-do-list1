@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Catch the Falling Stars</title>
+  <title>Catch the Falling Stars with a Frog</title>
   <style>
     body {
       margin: 0;
@@ -39,14 +39,18 @@
 
     let score = 0;
 
-    // Basket properties
+    // Frog (basket) properties
     const basket = {
       width: 80,
-      height: 20,
+      height: 80, // Adjusted height for the frog image
       x: canvas.width / 2 - 40,
-      y: canvas.height - 30,
+      y: canvas.height - 90,
       speed: 7
     };
+
+    // Load frog image (ensure "frog.png" is in the same folder or update the URL)
+    const frogImage = new Image();
+    frogImage.src = "frog.png";
 
     // Array to hold falling stars
     const stars = [];
@@ -76,13 +80,9 @@
       }
     }
 
-    // Draw the basket
-    function drawBasket() {
-      ctx.beginPath();
-      ctx.rect(basket.x, basket.y, basket.width, basket.height);
-      ctx.fillStyle = "#ff9800";
-      ctx.fill();
-      ctx.closePath();
+    // Draw the frog using the image
+    function drawFrog() {
+      ctx.drawImage(frogImage, basket.x, basket.y, basket.width, basket.height);
     }
 
     // Draw a star
@@ -94,7 +94,7 @@
       ctx.closePath();
     }
 
-    // Check for collision between a star and the basket
+    // Check for collision between a star and the frog (basket)
     function isColliding(star, basket) {
       return star.x > basket.x && star.x < basket.x + basket.width &&
              star.y + star.radius > basket.y && star.y - star.radius < basket.y + basket.height;
@@ -104,14 +104,14 @@
     function gameLoop() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Move basket based on keyboard input
+      // Move frog based on keyboard input
       if (rightPressed && basket.x < canvas.width - basket.width) {
         basket.x += basket.speed;
       } else if (leftPressed && basket.x > 0) {
         basket.x -= basket.speed;
       }
 
-      drawBasket();
+      drawFrog();
 
       // Spawn new stars at intervals
       if (Date.now() - lastStarTime > starInterval) {
@@ -130,7 +130,7 @@
         const star = stars[i];
         star.y += star.speed;
 
-        // Check collision with basket
+        // Check collision with frog
         if (isColliding(star, basket)) {
           score += 10;
           stars.splice(i, 1);
@@ -152,7 +152,10 @@
       requestAnimationFrame(gameLoop);
     }
 
-    gameLoop();
+    // Start the game loop once the frog image has loaded
+    frogImage.onload = () => {
+      gameLoop();
+    };
   </script>
 </body>
 </html>
