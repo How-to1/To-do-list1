@@ -137,7 +137,8 @@
     // Allow player to move the frog horizontally using arrow keys
     document.addEventListener('keydown', function(event) {
       const step = 20; // pixels per key press
-      let frogLeft = parseInt(frog.style.left);
+      // Use getComputedStyle to read the current 'left' value
+      let frogLeft = parseInt(window.getComputedStyle(frog).left, 10);
       
       if (event.key === 'ArrowLeft') {
         frogLeft = Math.max(0, frogLeft - step);
