@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Enhanced To-Do List with Edit & File Upload</title>
+  <title>Enhanced To-Do List with Edit, File Upload & Undo</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -157,12 +157,18 @@
       // Create container for action buttons
       const actionContainer = document.createElement('div');
 
-      // Complete button to toggle completed state
+      // Complete button to toggle completed state with undo option
       const completeBtn = document.createElement('button');
       completeBtn.textContent = 'Complete';
       completeBtn.className = 'complete-btn';
       completeBtn.addEventListener('click', () => {
         li.classList.toggle('completed');
+        // Toggle button text between "Complete" and "Undo"
+        if(li.classList.contains('completed')){
+          completeBtn.textContent = 'Undo';
+        } else {
+          completeBtn.textContent = 'Complete';
+        }
       });
       actionContainer.appendChild(completeBtn);
 
@@ -247,73 +253,4 @@
       const editDeadlineInput = document.createElement('input');
       editDeadlineInput.type = 'datetime-local';
       editDeadlineInput.value = currentDeadline;
-      editDiv.appendChild(editDeadlineInput);
-
-      // File input for updating file attachment
-      const editFileInput = document.createElement('input');
-      editFileInput.type = 'file';
-      editDiv.appendChild(editFileInput);
-
-      // Save button to update the task
-      const saveBtn = document.createElement('button');
-      saveBtn.textContent = 'Save';
-      saveBtn.addEventListener('click', () => {
-        const newText = editTextInput.value.trim();
-        if (newText === '') return; // Do not allow empty task text
-
-        // Update task text
-        contentSpan.querySelector('span').textContent = newText;
-
-        // Update deadline
-        if (editDeadlineInput.value) {
-          const newDeadline = "Deadline: " + editDeadlineInput.value.replace('T', ' ');
-          if (deadlineDiv) {
-            deadlineDiv.textContent = newDeadline;
-          } else {
-            const newDeadlineDiv = document.createElement('div');
-            newDeadlineDiv.className = 'deadline';
-            newDeadlineDiv.textContent = newDeadline;
-            contentSpan.appendChild(newDeadlineDiv);
-          }
-        } else if (deadlineDiv) {
-          deadlineDiv.remove();
-        }
-
-        // Update file attachment if a new file is provided
-        if (editFileInput.files && editFileInput.files[0]) {
-          const file = editFileInput.files[0];
-          let newAttachment;
-          if (file.type.startsWith("image/")) {
-            newAttachment = document.createElement('img');
-            newAttachment.src = URL.createObjectURL(file);
-          } else {
-            newAttachment = document.createElement('div');
-            newAttachment.textContent = "Attached File: " + file.name;
-          }
-          newAttachment.className = 'attachment';
-          const oldAttachment = li.querySelector('.attachment');
-          if (oldAttachment) {
-            oldAttachment.remove();
-          }
-          li.appendChild(newAttachment);
-        }
-
-        // Remove edit container and show original content
-        editDiv.remove();
-        contentSpan.style.display = 'flex';
-      });
-      editDiv.appendChild(saveBtn);
-
-      li.appendChild(editDiv);
-    }
-
-    addButton.addEventListener('click', addTodo);
-    deleteAllButton.addEventListener('click', deleteAllTodos);
-    input.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        addTodo();
-      }
-    });
-  </script>
-</body>
-</html>
+      
