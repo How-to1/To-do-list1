@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Enhanced To-Do List</title>
+  <title>Enhanced To-Do List with Deadline</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -15,16 +15,24 @@
       text-align: center;
       color: #333;
     }
-    #todo-input {
-      width: calc(100% - 140px);
+    .input-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .input-group input[type="text"],
+    .input-group input[type="datetime-local"] {
       padding: 10px;
       font-size: 16px;
+      flex: 1;
+      min-width: 150px;
     }
-    #add-btn, #delete-all-btn {
+    .input-group button {
       padding: 10px 20px;
       font-size: 16px;
       cursor: pointer;
-      margin-left: 5px;
     }
     ul {
       list-style: none;
@@ -37,33 +45,50 @@
       padding: 10px;
       border: 1px solid #ddd;
       display: flex;
+      flex-wrap: wrap;
       justify-content: space-between;
       align-items: center;
     }
-    .delete-btn, .complete-btn {
+    li.completed span {
+      text-decoration: line-through;
+      color: gray;
+    }
+    li span {
+      display: flex;
+      flex-direction: column;
+    }
+    li small {
+      color: #555;
+      font-size: 12px;
+      margin-top: 3px;
+    }
+    button {
       border: none;
       padding: 5px 10px;
       cursor: pointer;
       margin-left: 5px;
-    }
-    .delete-btn {
-      background: #e74c3c;
-      color: #fff;
+      border-radius: 3px;
     }
     .complete-btn {
       background: #2ecc71;
       color: #fff;
     }
-    .completed {
-      text-decoration: line-through;
-      color: gray;
+    .delete-btn {
+      background: #e74c3c;
+      color: #fff;
+    }
+    #delete-all-btn {
+      background: #c0392b;
+      color: #fff;
+      margin-top: 10px;
     }
   </style>
 </head>
 <body>
-  <h1>To-Do List</h1>
-  <div>
+  <h1>Enhanced To-Do List</h1>
+  <div class="input-group">
     <input type="text" id="todo-input" placeholder="Enter a new to-do">
+    <input type="datetime-local" id="deadline-input" title="Set deadline (optional)">
     <button id="add-btn">Add</button>
     <button id="delete-all-btn">Delete All</button>
   </div>
@@ -71,6 +96,7 @@
 
   <script>
     const input = document.getElementById('todo-input');
+    const deadlineInput = document.getElementById('deadline-input');
     const addButton = document.getElementById('add-btn');
     const deleteAllButton = document.getElementById('delete-all-btn');
     const todoList = document.getElementById('todo-list');
@@ -81,12 +107,22 @@
       if (todoText === '') return;
       
       const li = document.createElement('li');
+
+      // Create span for task content
+      const contentSpan = document.createElement('span');
+      contentSpan.textContent = todoText;
       
-      // Create span for text content
-      const span = document.createElement('span');
-      span.textContent = todoText;
-      li.appendChild(span);
+      // If a deadline is provided, display it below the task
+      const deadlineValue = deadlineInput.value;
+      if (deadlineValue) {
+        const deadlineInfo = document.createElement('small');
+        // Replace the "T" between date and time for better readability
+        deadlineInfo.textContent = "Deadline: " + deadlineValue.replace('T', ' ');
+        contentSpan.appendChild(deadlineInfo);
+      }
       
+      li.appendChild(contentSpan);
+
       // Create complete button to toggle completed state
       const completeBtn = document.createElement('button');
       completeBtn.textContent = 'Complete';
@@ -95,7 +131,7 @@
         li.classList.toggle('completed');
       });
       li.appendChild(completeBtn);
-      
+
       // Create delete button with confirmation
       const deleteBtn = document.createElement('button');
       deleteBtn.textContent = 'Delete';
@@ -106,11 +142,12 @@
         }
       });
       li.appendChild(deleteBtn);
-      
+
       todoList.appendChild(li);
-      
-      // Clear input field after adding
+
+      // Clear input fields after adding
       input.value = '';
+      deadlineInput.value = '';
     }
 
     // Function to delete all todo items with double confirmation
@@ -124,10 +161,10 @@
       }
     }
 
+    // Event listeners for button clicks and keypress (Enter)
     addButton.addEventListener('click', addTodo);
     deleteAllButton.addEventListener('click', deleteAllTodos);
-    
-    // Also add todo when Enter key is pressed
+
     input.addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
         addTodo();
